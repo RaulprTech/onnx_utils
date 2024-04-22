@@ -2,83 +2,109 @@ import torch
 import onnx
 import os
 from torchvision import models
+# import numpy as np
 
 def get_layers(onnx_model_path):
-    # Cargar el modelo ONNX
+    """
+    Retrieve the layers and their frequency from an ONNX model.
+
+    Parameters:
+    onnx_model_path (str): The path to the ONNX model file.
+
+    Returns:
+    dict: A dictionary containing the layer names as keys and their frequency as values.
+    """
+    # Load the ONNX model
     model = onnx.load(onnx_model_path)
 
-    # Obtener el grafo del modelo
+    # Get the model's graph
     graph = model.graph
 
-    # Inicializar un diccionario para almacenar las capas y su frecuencia
+    # Initialize a dictionary to store layers and their frequency
     layers = {}
 
-    # Iterar sobre las operaciones del grafo
+    # Iterate over the graph's nodes
     for node in graph.node:
-        # Obtener el nombre de la capa y agregarlo al diccionario
         layer_name = node.op_type
-        if layer_name in layers:
-            layers[layer_name] += 1
-        else:
-            layers[layer_name] = 1
+        layers[layer_name] = layers.get(layer_name, 0) + 1
 
     return layers
 
 
 def get_layer_names(onnx_model_path):
-    # Cargar el modelo ONNX
+    """
+    Retrieve the names of the layers from an ONNX model.
+
+    Parameters:
+    onnx_model_path (str): The path to the ONNX model file.
+
+    Returns:
+    list: A list of layer names.
+    """
+    # Load the ONNX model
     model = onnx.load(onnx_model_path)
 
-    # Obtener el grafo del modelo
+    # Get the model's graph
     graph = model.graph
 
-    # Inicializar una lista para almacenar los nombres de las capas
+    # Initialize a list to store layer names
     layer_names = []
 
-    # Iterar sobre las operaciones del grafo
+    # Iterate over the graph's nodes
     for node in graph.node:
-        # Agregar el nombre de la operación a la lista de nombres de las capas
         layer_names.append(node.name)
 
     return layer_names
 
 
-# Busca el valor correspondiente al nombre del input dado
 def input_to_value(onnx_model_path, input_name):
-    # Cargar el modelo ONNX
+    """
+    Retrieve the value of a specific input in an ONNX model.
+
+    Parameters:
+    onnx_model_path (str): The path to the ONNX model file.
+    input_name (str): The name of the input tensor.
+
+    Returns:
+    numpy.ndarray: The value of the input tensor.
+    """
+    # Load the ONNX model
     model = onnx.load(onnx_model_path)
 
-    # Obtener el grafo del modelo
+    # Get the model's graph
     graph = model.graph
 
-    # Inicializar una variable para almacenar los valores de los pesos
-    value = None
-
-    # Iterar sobre los inicializadores del grafo
+    # Iterate over the initializers in the graph
     for init_tensor in graph.initializer:
         if input_name in init_tensor.name:
-            # Convertir el tensor de inicialización a un array de numpy
+            # Convert the initializer tensor to a numpy array
             value = onnx.numpy_helper.to_array(init_tensor)
             return value
-    print("Not found value")
-
+    print("Value not found")
 
 
 def get_inputs(onnx_model_path, layer_name):
-    # Cargar el modelo ONNX
+    """
+    Retrieve the input names of a specific layer in an ONNX model.
+
+    Parameters:
+    onnx_model_path (str): The path to the ONNX model file.
+    layer_name (str): The name of the layer.
+
+    Returns:
+    list: A list of input names for the specified layer.
+    """
+    # Load the ONNX model
     model = onnx.load(onnx_model_path)
 
-    # Obtener el grafo del modelo
+    # Get the model's graph
     graph = model.graph
 
-    # Iterar sobre las operaciones del grafo
+    # Iterate over the graph's nodes
     for node in graph.node:
-        # Verificar si el nombre de la operación corresponde a la capa
         if node.name == layer_name:
-            # print(node.input)
-            inputs = node.input
-            return inputs
-        
+            return node.input
+
 
 
 # def get_weights(onnx_model_path, layer, kind):
@@ -113,9 +139,9 @@ def get_inputs(onnx_model_path, layer_name):
     
 
 
-if __name__ == "__main__":
-    get_layers()
-    get_layer_names()
-    input_to_value()
-    get_inputs()
+# if __name__ == "__main__":
+#     get_layers()
+#     get_layer_names()
+#     input_to_value()
+#     get_inputs()
 

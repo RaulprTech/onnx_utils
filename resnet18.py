@@ -3,52 +3,67 @@ import onnx
 import os
 from torchvision import models
 
+
 def convert_pth_to_onnx(model_name):
-    # Verificar si estamos en Google Colab
+    """
+    Convert a PyTorch model (.pth) to ONNX format (.onnx).
+
+    Parameters:
+    model_name (str): The name of the PyTorch model file (without extension).
+
+    Raises:
+    FileNotFoundError: If the specified .pth file is not found.
+    TypeError: If the loaded file is not a valid PyTorch model.
+
+    Returns:
+    None
+    """
+    
+    # Check if running in Google Colab
     try:
-        import google.colab
+        import google.colab # Import only if running in Google Colab
         IN_COLAB = True
     except ImportError:
         IN_COLAB = False
 
-    # Ruta al modelo en la carpeta "model"
-    model_path = f"../models/{model_name}.pth"
+    # Path to the model in the "models" folder
+    model_path = f"models/{model_name}.pth"
 
-    if not os.path.isfile(f"../{model_name}.onnx"):
+    # Check if .onnx file already exists
+    if not os.path.isfile(f"models/{model_name}.onnx"):
         if IN_COLAB:
-            # Subir el modelo a Google Colab
+            # Upload the model to Google Colab
             uploaded = files.upload()
 
-            # Cargar el modelo pre-entrenado de PyTorch desde la carpeta "model" en Colab
-            model_path = list(uploaded.keys())[0]  # Obtiene el nombre del archivo subido
-            model = torch.load(model_path, map_location=torch.device('cpu'))  # Cargar el modelo en CPU
+            # Load the pretrained PyTorch model from the "models" folder in Colab
+            model_path = list(uploaded.keys())[0]  # Get the uploaded file name
+            model = torch.load(model_path, map_location=torch.device('cpu'))  # Load the model on CPU
         else:
-            # Verificar si el modelo especificado existe en la carpeta "model"
+            # Check if the specified model exists in the "models" folder
             if not os.path.isfile(model_path):
-                raise FileNotFoundError(f"No se encontró el archivo {model_name}.pth en la carpeta 'models'")
+                raise FileNotFoundError(f"No such file: {model_name}.pth in the 'models' folder")
 
-            model = torch.load(model_path, map_location=torch.device('cpu'))  # Cargar el modelo en CPU
+            model = torch.load(model_path, map_location=torch.device('cpu'))  # Load the model on CPU
 
-            # Verificar si el modelo es un diccionario (OrderedDict)
+            # Check if the model is a dictionary (OrderedDict)
             if isinstance(model, dict) and 'state_dict' in model:
-                # Reconstruir el modelo desde el diccionario
-                model = models.resnet18(pretrained=False)  # Reemplaza YourModelClass con la clase de tu modelo
+                # Reconstruct the model from the dictionary
+                model = models.resnet18(pretrained=False)  # Replace YourModelClass with your model's class
                 model.load_state_dict(model['state_dict'])
             elif not isinstance(model, torch.nn.Module):
-                print(f"Tipo de modelo cargado: {type(model)}")
-                raise TypeError("El archivo cargado no parece ser un modelo de PyTorch válido.")
+                print(f"Loaded model type: {type(model)}")
+                raise TypeError("The loaded file does not appear to be a valid PyTorch model.")
 
-        model.eval()  # Establecer el modelo en modo de evaluación
+        model.eval()  # Set the model to evaluation mode
 
-        # Definir una entrada de ejemplo (tensor)
-        dummy_input = torch.randn(1, 3, 224, 224)  # Ejemplo de tensor de entrada
+        # Define a sample input (tensor)
+        dummy_input = torch.randn(1, 3, 224, 224)  # Example input tensor
 
-        # Exportar el modelo a ONNX
+        # Export the model to ONNX
         onnx_path = f"{os.path.splitext(model_name)[0]}.onnx"
         torch.onnx.export(model, dummy_input, onnx_path, export_params=True, opset_version=11)
 
-        print(f"Modelo exportado correctamente como '{onnx_path}' usando el archivo {model_path}")
+        print(f"Model successfully exported as '{onnx_path}' using the file {model_path}")
 
-
-# Llamar a la función y especificar el nombre del archivo .pth
+# Call the function and specify the .pth file name
 convert_pth_to_onnx("resnet18")
